@@ -67,7 +67,7 @@ class GsijAltTile(Singleton):
 
         # Default values
         if zoom is None:
-            zoom = 14
+            zoom = 15  # maximum zoom level for DEM5A data
 
         if png_request_interval_sec is None:
             png_request_interval_sec = 1.0
@@ -113,7 +113,7 @@ class GsijAltTile(Singleton):
 
     def fetch_memory_cache(self, zoom, x_tile, y_tile):
         tile_coords = (zoom, x_tile, y_tile)
-        print(self.tile_cache.keys())
+
         if tile_coords in self.tile_cache:
             ret = self.tile_cache[tile_coords]
             if self.verbose:
@@ -273,7 +273,7 @@ class GsijAltTile(Singleton):
         assert y_tile < val_max, "Given tile coordinate exceeded the limit."
 
         url = (
-            "https://cyberjapandata.gsi.go.jp/xyz/demgm_png/{:d}/{:d}/{:d}.png".format(
+            "https://cyberjapandata.gsi.go.jp/xyz/dem5a_png/{:d}/{:d}/{:d}.png".format(
                 zoom, x_tile, y_tile
             )
         )
