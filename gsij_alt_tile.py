@@ -156,15 +156,14 @@ class GsijAltTile(Singleton):
             if self.verbose:
                 print('tile was saved to', file_path)
 
-    def get_alt(self, zoom, lat, lon):
-        zoom = int(zoom)
-        lat = float(lat)
+    def get_alt(self, lon, lat):
         lon = float(lon)
+        lat = float(lat)
 
-        tile_coords = self.calc_coords2tile_coords(zoom, lat, lon)
+        tile_coords = self.calc_coords2tile_coords(self.zoom, lon, lat)
 
         if self.verbose:
-            print('zoom:{}, lat:{}, lon:{}'.format(zoom, lat, lon))
+            print('zoom:{}, lon:{}, lat:{}'.format(self.zoom, lon, lat))
             print('-> tile coordinates (zoom:{}, x_tile:{}, y_tile:{})'.format(*tile_coords))
 
         tile = self.fetch_memory_cache(*tile_coords)
@@ -180,14 +179,14 @@ class GsijAltTile(Singleton):
         if self.cache_method == 'memory_and_file':
             self.add_file_cache(*tile_coords, tile)
 
-        idx_x, idx_y = self.calc_tile_idx(zoom, lat, lon, self.tile_size)
+        idx_x, idx_y = self.calc_tile_idx(self.zoom, lon, lat, self.tile_size)
 
         alt = tile[idx_y, idx_x]
 
         return alt
 
     @classmethod
-    def calc_coords2tile_coords(cls, zoom, lat, lon, y_method="default"):
+    def calc_coords2tile_coords(cls, zoom, lon, lat, y_method="default"):
         """
         Return
         ======
@@ -207,18 +206,18 @@ class GsijAltTile(Singleton):
         # radius for circumference of 1
         r = 1.0 / (2 * np.pi)
 
-        x_raw = 2 * np.pi * r * (lat + 180) / 360
+        x_raw = 2 * np.pi * r * (lon + 180) / 360
 
         if y_method == "default":
-            y_raw = r * np.log(np.tan(np.pi / 180 * (90 + lon) / 2))
+            y_raw = r * np.log(np.tan(np.pi / 180 * (90 + lat) / 2))
         elif y_method == "sin":
-            phi = lon / 180 * np.pi
+            phi = lat / 180 * np.pi
             y_raw = r / 2.0 * np.log((1 + np.sin(phi)) / (1 - np.sin(phi)))
         elif y_method == "sin_cos":
-            phi = lon / 180 * np.pi
+            phi = lat / 180 * np.pi
             y_raw = r * np.log((1 + np.sin(phi)) / np.cos(phi))
         elif y_method == "cos_tan":
-            phi = lon / 180 * np.pi
+            phi = lat / 180 * np.pi
             y_raw = r * np.log(1.0 / np.cos(phi) + np.tan(phi))
         else:
             raise NotImplementedError("Invalid y_method:", y_method)
@@ -230,28 +229,28 @@ class GsijAltTile(Singleton):
 
     @classmethod
     def calc_tile_coords2corner_coords(cls, zoom, x_tile, y_tile):
-        left_upper_lat = x_tile / (1 << zoom) * 360 - 180
+        left_upper_lon = x_tile / (1 << zoom) * 360 - 180
 
         r = 1.0 / (2 * np.pi)
         y = 0.5 - y_tile / (1 << zoom)
-        left_upper_lon_rad = 2 * np.arctan(np.exp(y / r)) - np.pi / 2
-        left_upper_lon = left_upper_lon_rad / np.pi * 180
+        left_upper_lat_rad = 2 * np.arctan(np.exp(y / r)) - np.pi / 2
+        left_upper_lat = left_upper_lat_rad / np.pi * 180
 
-        return (left_upper_lat, left_upper_lon)
+        return (left_upper_lon, left_upper_lat)
 
     @classmethod
     def calc_max_lon(cls):
-        max_lon_rad = 2 * np.arctan(np.exp(np.pi)) - np.pi / 2
-        max_lon = max_lon_rad / np.pi * 180
-        return max_lon
+        max_lat_rad = 2 * np.arctan(np.exp(np.pi)) - np.pi / 2
+        max_lat = max_lat_rad / np.pi * 180
+        return max_lat
 
     @classmethod
-    def calc_tile_idx(cls, zoom, lat, lon, tile_size):
-        zoom, x_tile, y_tile = cls.calc_coords2tile_coords(zoom, lat, lon)
+    def calc_tile_idx(cls, zoom, lon, lat, tile_size):
+        zoom, x_tile, y_tile = cls.calc_coords2tile_coords(zoom, lon, lat)
 
         zoom2 = zoom + np.log2(tile_size)
         zoom2 = int(zoom2)
-        _, x_tile2, y_tile2 = cls.calc_coords2tile_coords(zoom2, lat, lon)
+        _, x_tile2, y_tile2 = cls.calc_coords2tile_coords(zoom2, lon, lat)
 
         idx_x = x_tile2 - x_tile * tile_size
         idx_y = y_tile2 - y_tile * tile_size
