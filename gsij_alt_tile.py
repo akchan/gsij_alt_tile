@@ -7,6 +7,11 @@
 # Library to get altitude using geographic information authority of Japan
 # altitude tile system.
 #
+# References
+# ==========
+# 
+# - https://maps.gsi.go.jp/development/ichiran.html
+# 
 
 from collections import OrderedDict
 import os
